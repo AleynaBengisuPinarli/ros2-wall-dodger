@@ -6,10 +6,13 @@ Bu depo, ROS 2 Humble ve Python altyapısı kullanılarak geliştirilmiş otonom
 
 ## 📌 Temel Özellikler ve Mimari
 
-- **Hibrit Düğüm Yapısı (`duvar_kacis_node`):** Tek bir ROS 2 düğümü içerisinde hem abone (`/turtle1/pose` üzerinden konum takibi) hem de yayıncı (`/turtle1/cmd_vel` üzerinden hareket komutları) mekanizmaları eş zamanlı çalışır[cite: 8].
-- **Akıllı Sınır Algoritması:** Kaplumbağa belirlenen güvenli sınırların dışına çıktığında ve yönü duvara dönükse, doğrusal hızı kesilip açısal hızla iç kısımlara doğru döner; böylece köşelerde veya kenarlarda takılıp kalma (daire çizme) problemi ortadan kalkar[cite: 8].
-- **Zamanlayıcı Destekli Loglama:** `create_timer` yardımıyla her 1 saniyede bir `get_logger().info()` fonksiyonu tetiklenerek anlık koordinatlar konsola aktarılır[cite: 8].
-- **Dinamik Parametre Yönetimi (Bonus):** Hızlar ve çalışma sınırları kod içerisinden bağımsız olarak ROS 2 parametreleri aracılığıyla değiştirilebilir[cite: 8]:
+- **Hibrit Düğüm Yapısı (`duvar_kacis_node`):** Tek bir ROS 2 düğümü içerisinde hem abone (`/turtle1/pose` üzerinden konum takibi) hem de yayıncı (`/turtle1/cmd_vel` üzerinden hareket komutları) mekanizmaları eş zamanlı çalışır.
+
+- **Akıllı Sınır Algoritması:** Kaplumbağa belirlenen güvenli sınırların dışına çıktığında ve yönü duvara dönükse, doğrusal hızı kesilip açısal hızla iç kısımlara doğru döner; böylece köşelerde veya kenarlarda takılıp kalma (daire çizme) problemi ortadan kalkar.
+
+- **Zamanlayıcı Destekli Loglama:** `create_timer` yardımıyla her 1 saniyede bir `get_logger().info()` fonksiyonu tetiklenerek anlık koordinatlar konsola aktarılır.
+
+- **Dinamik Parametre Yönetimi (Bonus):** Hızlar ve çalışma sınırları kod içerisinden bağımsız olarak ROS 2 parametreleri aracılığıyla değiştirilebilir:
 
 | Parametre Adı | Varsayılan Değer | Açıklama |
 | :--- | :--- | :--- |
@@ -28,14 +31,24 @@ Aşağıdaki görselde kaplumbağanın simülasyon ortamındaki hareket yörüng
 ![turtlesim](turtlesim.jpeg)
 
 ### 2. Simülatör Başlangıç Ekranı
-ros2 run turtlesim turtlesim_node komutuyla başlatılan simülatör düğümünün terminal çıktısıdır. Düğüm başlatıldığında kaplumbağa (turtle1) ekranın tam ortasında, yaklaşık x = 5.54, y = 5.54 konumunda ve theta = 0 açısıyla otomatik olarak oluşturulur. Düğümümüz anlık konum verilerini /turtle1/pose topiği üzerinden dinlemeye bu aşamada başlar:
+`ros2 run turtlesim turtlesim_node` komutuyla başlatılan simülatör düğümünün terminal çıktısıdır. Düğüm başlatıldığında kaplumbağa (`turtle1`) ekranın tam ortasında, yaklaşık $x = 5.54$, $y = 5.54$ konumunda ve $\theta = 0$ açısıyla otomatik olarak oluşturulur. Düğümümüz anlık konum verilerini `/turtle1/pose` topiği üzerinden dinlemeye bu aşamada başlar:
 
 ![turtlesim_node](turtlesim_node.jpeg)
 
 ### 3. Konsol Log Akışı
-duvar_kacis_node düğümünün terminal çıktısıdır. Düğüm, zamanlayıcı mekanizması sayesinde her saniye [INFO] seviyesinde mevcut konumu konsola yazdırmaktadır. Loglar incelendiğinde kaplumbağanın y ≈ 5.54 sabitken x değerinin 7.01, 8.52 ve 10.01 olarak arttığı, x üst sınıra (10.0) ulaştığında açısal dönüş yaparak yön değiştirdiği ve ardından y değerinin artarak ilerlemeye devam ettiği net bir şekilde görülmektedir. Bu da otonom sınır kontrolünün ve yön değiştirme mantığının kusursuz çalıştığını kanıtlamaktadır:
+`duvar_kacis_node` düğümünün terminal çıktısıdır. Düğüm, zamanlayıcı mekanizması sayesinde her saniye `[INFO]` seviyesinde mevcut konumu konsola yazdırmaktadır. Loglar incelendiğinde kaplumbağanın $y \approx 5.54$ sabitken $x$ değerinin arttığı, sınır değerine ulaştığında açısal dönüş yaparak yön değiştirdiği net bir şekilde görülmektedir:
 
 ![node_log](node_log.jpeg)
+
+### 4. Hız Komutları İzleme (`/turtle1/cmd_vel`)
+Düğümün simülatöre gönderdiği hız komutlarının `ros2 topic echo` yardımıyla anlık olarak izlendiği terminal görüntüsüdür. Loglarda `linear.x` değerinin sabit olarak `1.5` birim tutulduğu, dönüş anlarında ise açısal hız komutlarının (`angular.z`) devreye girerek kaplumbağayı güvenli bölgeye yönlendirdiği doğrulanmaktadır:
+
+![cmd_vel_echo](cmd_vel.jpeg)
+
+### 5. Konum ve Pozisyon Verisi İzleme (`/turtle1/pose`)
+Kaplumbağanın simülatörden yayınladığı anlık koordinatların ve hız vektörlerinin (`x`, `y`, `theta`, `linear_velocity`, `angular_velocity`) `ros2 topic echo /turtle1/pose` komutuyla konsola yansıyan ham veri akışıdır:
+
+![pose_echo](pose.jpeg)
 
 ---
 
@@ -43,7 +56,7 @@ duvar_kacis_node düğümünün terminal çıktısıdır. Düğüm, zamanlayıc�
 
 1. Düğüm aktifleştiğinde `/turtle1/pose` topiğini dinlemeye başlar (`pose_callback`).
 2. Gelen anlık `x` ve `y` değerleri, tanımlanan minimum ve maksimum sınır aralığıyla kıyaslanır.
-3. Eğer konum sınır dışındaysa ve hareket vektörü duvara doğru yönelmişse, doğrusal hız sıfırlanarak (`linear.x = 0`) yalnızca açısal dönüş komutu (`angular.z`) uygulanır[cite: 8].
+3. Eğer konum sınır dışındaysa ve hareket vektörü duvara doğru yönelmişse, doğrusal hız sıfırlanarak (`linear.x = 0`) yalnızca açısal dönüş komutu (`angular.z`) uygulanır.
 4. Sınır içerisindeyken normal doğrusal sürüş (`linear_speed`) devam ettirilir.
 5. Üretilen `geometry_msgs/msg/Twist` mesajı `/turtle1/cmd_vel` üzerinden simülatöre iletilir.
 
@@ -54,38 +67,6 @@ duvar_kacis_node düğümünün terminal çıktısıdır. Düğüm, zamanlayıc�
 Projeyi kendi çalışma alanınızda (`ros2_ws/src`) çalıştırmak için aşağıdaki adımları izleyebilirsiniz:
 
 1. **Depoyu klonlayın:**
-
    ```bash
    cd ~/ros2_ws/src
-   git clone https://github.com/KULLANICI_ADIN/DEPO_ADI.git turtle_duvar_py
-   ```
-
-2. **Paketi derleyin:**
-
-   ```bash
-   cd ~/ros2_ws
-   colcon build --packages-select turtle_duvar_py --symlink-install
-   source install/setup.bash
-   ```
-
-3. **TurtleSim'i başlatın (Terminal 1):**
-
-   ```bash
-   cd ~/ros2_ws
-   source install/setup.bash
-   ros2 run turtlesim turtlesim_node
-   ```
-
-4. **Düğümü çalıştırın (Terminal 2):**
-
-   ```bash
-   cd ~/ros2_ws
-   source install/setup.bash
-   ros2 run turtle_duvar_py duvar_kacis
-   ```
-
-5. **Parametrelerle çalıştırma (Bonus):**
-
-   ```bash
-   ros2 run turtle_duvar_py duvar_kacis --ros-args -p linear_speed:=2.0 -p angular_speed:=3.0 -p min_limit:=2.0 -p max_limit:=9.0
-   ```
+   git clone [https://github.com/AleynaBengisuPinarli/ros2-wall-dodger.git](https://github.com/AleynaBengisuPinarli/ros2-wall-dodger.git) turtle_duvar_py
